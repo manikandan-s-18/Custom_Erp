@@ -5,6 +5,14 @@ app_description = "customization of erp"
 app_email = "i@gmail.com"
 app_license = "mit"
 
+doctype_js = {"Purchase Invoice" : "public/js/purchase_order.js"}
+
+doc_events = {
+    "Purchase Invoice": {
+        "validate": "custom_erp.customizations.supplier_item_validation.validate_supplier_items"
+    }
+}
+
 # Apps
 # ------------------
 
@@ -43,7 +51,6 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Purchase Invoice" : "public/js/purchase_order.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
