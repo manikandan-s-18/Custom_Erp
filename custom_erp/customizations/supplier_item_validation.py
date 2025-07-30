@@ -1,22 +1,25 @@
 import frappe
-from frappe import _
 
-def validate_supplier_items(doc, method=None):
-    if not hasattr(doc, "supplier") or not doc.supplier:
-        return
-
-
-    supplier_master = frappe.db.get_value("Supplier Specific Item", {"supplier": doc.supplier}, "name")
-    if not supplier_master:
-        frappe.throw(_(f"No Supplier Item Master found for Supplier <b>{doc.supplier}</b>."))
+@frappe.whitelist()
+def check_supplier_item(supplier, item_code):
+    return frappe.db.exists({
+        "doctype": "Supplier Item Child",
+        "parent": supplier,
+        "item_code": item_code
+    }) is not None
 
 
-    allowed_items = frappe.get_all("Supplier Item Child",
-        filters={"parent": supplier_master},
-        fields=["item_code"])
+@frappe.whitelist()
+def add_supplier_item(supplier, item_code):
+    if not frappe.db.exists('Supplier Specific Item', supplier):
+        frappe.get_doc({
+            'doctype': 'Supplier Specific Item',
+            'supplier': supplier
+        }).insert()
 
-    allowed_item_codes = {item.item_code for item in allowed_items}
-
-    for item in doc.items:
-        if item.item_code not in allowed_item_codes:
-            frappe.throw(_(f"Item <b>{item.item_code}</b> is not Supplied by Supplier <b>{doc.supplier}</b>."))
+    supplier_doc = frappe.get_doc('Supplier Specific Item', supplier)
+    supplier_doc.append('item_code', {
+        'item_code': item_code
+    })
+    supplier_doc.save()
+    return True
