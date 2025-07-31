@@ -33,10 +33,10 @@ def fetch_supplier_items(supplier):
     )
     item_details = []
     for row in items:
-        item = frappe.get_value('Item', row.item_code, ['item_name'], as_dict=True)
+        item = frappe.get_value('Item', row.item_code, as_dict=True)
         if item:
             item_details.append({
-                'item_code': row.item_code,
-                'item_name': item.item_name
+                'item_code': row.item_code
             })
+
     return item_details
