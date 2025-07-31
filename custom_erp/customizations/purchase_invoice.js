@@ -1,12 +1,12 @@
 frappe.ui.form.on("Purchase Invoice", {
-    before_save: async function(frm) {
+    validate: async function(frm) {
+        if(!frm.doc.__unsaved)return;
+        console.log("Validating supplier items...");
         if (!frm.doc.supplier || !frm.doc.items.length) {
             frappe.validated = false;
             return;
         }
-
         let missing_items = [];
-
         for (let row of frm.doc.items) {
             const res = await frappe.call({
                 method: "custom_erp.customizations.supplier_item_validation.check_supplier_item",
@@ -45,5 +45,6 @@ frappe.ui.form.on("Purchase Invoice", {
                 );
             });
         }
-    }
+    
+}
 });
