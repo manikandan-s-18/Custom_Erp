@@ -6,94 +6,164 @@ frappe.pages['products'].on_page_load = function(wrapper) {
     });
 
     $(page.body).append(`<div class="row" id="product-cards" style="margin-top: 20px;"></div>`);
+    window.itemtoPOmap = {};
 
-
-    frappe.call({
-        method: 'custom_erp.items.get_existing_item_codes',
-        callback: function(r) {
-            const existingItemCodes = r.message || [];
-            fetchProducts(existingItemCodes);
-        }
-    });
-};
-
-function fetchProducts(existingItemCodes) {
     fetch("https://fakestoreapi.in/api/products?limit=150")
         .then(response => response.json())
         .then(data => {
-            if (data.status === "SUCCESS" && Array.isArray(data.products)) {
-                renderCards(data.products, existingItemCodes);
+            let products = Array.isArray(data) ? data : (data.products || []);
+            if (products.length > 0) {
+                renderCards(products);
             } else {
                 frappe.msgprint("No products found.");
             }
         })
-        .catch(error => {
-            console.error("API fetch error:", error);
+        .catch(() => {
             frappe.msgprint("Failed to fetch products from the API.");
         });
-}
+};
 
-function renderCards(products, existingItemCodes) {
+function renderCards(products) {
     const container = document.getElementById("product-cards");
     container.innerHTML = "";
 
     products.forEach(product => {
-        const alreadyExists = existingItemCodes.includes(String(product.id));
+        const safetitle = frappe.utils.escape_html(product.title || "");
+        const safedesc = frappe.utils.escape_html(product.description || "");
+        const itemcode = safetitle.substring(0, 100);
 
         const card = document.createElement("div");
         card.className = "col-md-4";
 
-        const safeTitle = product.title.replace(/'/g, "\\'");
-        const safeDesc = product.description.replace(/'/g, "\\'");
-
         card.innerHTML = `
             <div class="card mb-4 shadow-sm">
-                <img src="${product.image}" class="card-img-top" style="height: 300px; object-fit: contain;" alt="${safeTitle}">
+                <img src="${product.image}" class="card-img-top" style="height: 300px; object-fit: contain;" alt="${safetitle}">
                 <div class="card-body">
-                    <h5 class="card-title">${safeTitle}</h5>
-                    <p class="card-text">${safeDesc.substring(0, 100)}...</p>
+                    <h5 class="card-title">${safetitle}</h5>
+                    <p class="card-text">${safedesc.substring(0, 50)}...</p>
                     <h6 class="text-success">₹ ${product.price}</h6>
-                    ${
-                        alreadyExists
-                        ? `<span class="text-muted">Already Added</span>`
-                        : `<button class="btn btn-primary btn-sm" onclick='addToCart(this, ${JSON.stringify({
-                            id: product.id,
-                            title: safeTitle,
-                            price: product.price,
-                            description: safeDesc,
-                            image: product.image,
-                            category: product.category
-                        }).replace(/'/g, "&apos;")})'>Add to Items</button>`
-                    }
+
+                    <button class="btn btn-primary" id="add-stock-${itemcode}" onclick='addStock(${JSON.stringify(product)})'>Add Stock</button>
+                    <div id="pr-section-${itemcode}" style="display:none;">
+                        <select class="form-control mb-2" id="workflow-state-${itemcode}" disabled></select>
+                        <button class="btn btn-secondary" onclick='addPurchaseReceipt("${itemcode}")'>Add Purchase Receipt</button>
+                    </div>
                 </div>
             </div>
         `;
-
         container.appendChild(card);
+
+
+        frappe.call({
+            method: "custom_erp.items.get_workflow_state",
+            args: { item_code: itemcode },
+            callback: function(r) {
+                if (r.message) {
+                    if (r.message.status === "completed") {
+                        
+                        document.getElementById(`add-stock-${itemcode}`).style.display = "inline-block";
+                        document.getElementById(`pr-section-${itemcode}`).style.display = "none";
+                    } else if (r.message.status === "po_created") {
+                        
+                        document.getElementById(`add-stock-${itemcode}`).style.display = "none";
+                        const prsection = document.getElementById(`pr-section-${itemcode}`);
+                        const workflowSelect = document.getElementById(`workflow-state-${itemcode}`);
+                        if (prsection && workflowSelect) {
+                            workflowSelect.innerHTML = `<option>${r.message.workflow_state}</option>`;
+                            prsection.style.display = "block";
+                            window.itemtoPOmap[itemcode] = r.message.purchase_order;
+                        }
+                    }
+                }
+            }
+        });
     });
 }
 
-function addToCart(button, product) {
-    frappe.call({
-        method: 'custom_erp.items.add_to_cart',
-        args: {
-            product_id: product.id,
-            title: product.title,
-            price: product.price,
-            description: product.description,
-            image: product.image,
-            category: product.category
-        },
-        callback: function(response) {
-            const res = response.message;
-            if (res.status === "SUCCESS") {
-                frappe.msgprint(res.message);
-                if (button) {
-                    button.outerHTML = `<span class="text-muted">Added</span>`;
+function addStock(product) {
+    if (typeof product === "string") product = JSON.parse(product);
+
+    let d = new frappe.ui.Dialog({
+        title: 'Add Stock',
+        fields: [
+            { fieldname: 'item_name', label: 'Item Name', fieldtype: 'Data', default: product.title, read_only: 1 },
+            { fieldname: 'target_warehouse', label: 'Target Warehouse', fieldtype: 'Link', options: 'Warehouse', reqd: 1 },
+            { fieldname: 'required_date', label: 'Required Date', fieldtype: 'Date', reqd: 1 },
+            { fieldname: 'quantity', label: 'Quantity', fieldtype: 'Float', reqd: 1 },
+            { fieldname: 'price', label: 'Price', fieldtype: 'Currency', default: product.price, read_only: 1 }
+        ],
+        primary_action_label: 'Submit',
+        primary_action(values) {
+            frappe.call({
+                method: 'custom_erp.items.add_stock',
+                args: {
+                    title: values.item_name,
+                    price: values.price,
+                    image: product.image,
+                    quantity: values.quantity,
+                    required_date: values.required_date,
+                    target_warehouse: values.target_warehouse
+                },
+                callback: function(response) {
+                    if (response.message && response.message.purchase_order) {
+                        frappe.show_alert({
+                            message: `Stock added successfully for ${values.item_name}.`,
+                            indicator: 'green'
+                        });
+                        const itemcode = values.item_name.substring(0, 100);
+                        document.getElementById(`add-stock-${itemcode}`).style.display = "none";
+
+                        const prsection = document.getElementById(`pr-section-${itemcode}`);
+                        const workflowSelect = document.getElementById(`workflow-state-${itemcode}`);
+                        if (prsection && workflowSelect) {
+                            workflowSelect.innerHTML = `<option>${response.message.workflow_state || 'Pending'}</option>`;
+                            prsection.style.display = "block";
+                        }
+
+                        window.itemtoPOmap[itemcode] = response.message.purchase_order;
+                    } else {
+                        frappe.msgprint('Failed to add stock.');
+                    }
+                       d.hide();
                 }
+                
+            });
+            
+        }
+    });
+    d.show();
+}
+
+function addPurchaseReceipt(item_code) {
+    const poname = window.itemtoPOmap[item_code];
+    if (!poname) {
+        frappe.msgprint("Purchase Order not found for this item.");
+        return;
+    }
+
+    frappe.call({
+        method: 'custom_erp.items.add_purchase_receipt',
+        args: { purchase_order: poname },
+        callback: function(r) {
+            let msg = r.message;
+            if (msg && msg.purchase_receipt) {
+                frappe.msgprint(
+                    (msg.status === "already_exists" ? "Purchase Receipt already exists: " : "Purchase Receipt created: ") + msg.purchase_receipt
+                );
+                let prsection = document.getElementById(`pr-section-${item_code}`);
+                if (prsection) prsection.style.display = "none";
+
+                let addstockbtn = document.getElementById(`add-stock-${item_code}`);
+                if (addstockbtn) addstockbtn.style.display = "inline-block";
+
+                let workflowstate = document.getElementById(`workflow-state-${item_code}`);
+                if (workflowstate) workflowstate.style.display = "none";
             } else {
-                frappe.msgprint(res.message || "Something went wrong.");
+                frappe.msgprint("Failed to create Purchase Receipt.");
             }
+        },
+        error: function(err) {
+            frappe.msgprint("Server error: " + (err.message || err.statusText || "Unknown error"));
         }
     });
 }
