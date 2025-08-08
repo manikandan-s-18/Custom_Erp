@@ -56,7 +56,7 @@ function renderCards(products) {
 
         frappe.call({
             method: "custom_erp.items.get_workflow_state",
-            args: { item_code: itemcode },
+            args: { fake_store_order : itemcode},
             callback: function(r) {
                 if (r.message) {
                     if (r.message.status === "completed") {
