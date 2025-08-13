@@ -30,7 +30,7 @@ function renderCards(products) {
     products.forEach(product => {
         const safetitle = frappe.utils.escape_html(product.title || "");
         const safedesc = frappe.utils.escape_html(product.description || "");
-        const itemcode = safetitle.substring(0, 100);
+        const itemcode = `FS-${product.id}`;;
 
         const card = document.createElement("div");
         card.className = "col-md-4";
@@ -42,7 +42,7 @@ function renderCards(products) {
                     <h5 class="card-title">${safetitle}</h5>
                     <p class="card-text">${safedesc.substring(0, 50)}...</p>
                     <h6 class="text-success">₹ ${product.price}</h6>
-
+                    <p class="card-text">Stock Balance : <span id="stock-balance-${itemcode}">loading...</span></p>
                     <button class="btn btn-primary" id="add-stock-${itemcode}" onclick='addStock(${JSON.stringify(product)})'>Add Stock</button>
                     <div id="pr-section-${itemcode}" style="display:none;">
                         <select class="form-control mb-2" id="workflow-state-${itemcode}" disabled></select>
@@ -53,18 +53,17 @@ function renderCards(products) {
         `;
         container.appendChild(card);
 
-
         frappe.call({
             method: "custom_erp.items.get_workflow_state",
             args: { fake_store_order : itemcode},
             callback: function(r) {
                 if (r.message) {
                     if (r.message.status === "completed") {
-                        
+
                         document.getElementById(`add-stock-${itemcode}`).style.display = "inline-block";
                         document.getElementById(`pr-section-${itemcode}`).style.display = "none";
                     } else if (r.message.status === "po_created") {
-                        
+
                         document.getElementById(`add-stock-${itemcode}`).style.display = "none";
                         const prsection = document.getElementById(`pr-section-${itemcode}`);
                         const workflowSelect = document.getElementById(`workflow-state-${itemcode}`);
@@ -77,15 +76,29 @@ function renderCards(products) {
                 }
             }
         });
+
+    
+        frappe.call({
+            method: "custom_erp.items.get_stock_balance",
+            args: { item_code: itemcode },
+            callback: function(r) {
+                const stockbalance = document.getElementById(`stock-balance-${itemcode}`);
+                if (stockbalance) {
+                    stockbalance.textContent = r.message || 0;
+                }
+            }
+        });
     });
 }
 
 function addStock(product) {
     if (typeof product === "string") product = JSON.parse(product);
+    const itemcode = getItemCode(product);
 
     let d = new frappe.ui.Dialog({
         title: 'Add Stock',
         fields: [
+            { fieldname: 'item_code', label: 'Item Code', fieldtype: 'Data', default: itemcode, read_only: 1 },
             { fieldname: 'item_name', label: 'Item Name', fieldtype: 'Data', default: product.title, read_only: 1 },
             { fieldname: 'target_warehouse', label: 'Target Warehouse', fieldtype: 'Link', options: 'Warehouse', reqd: 1 },
             { fieldname: 'required_date', label: 'Required Date', fieldtype: 'Date', reqd: 1 },
@@ -97,6 +110,7 @@ function addStock(product) {
             frappe.call({
                 method: 'custom_erp.items.add_stock',
                 args: {
+                    item_code: values.item_code,
                     title: values.item_name,
                     price: values.price,
                     image: product.image,
@@ -106,29 +120,21 @@ function addStock(product) {
                 },
                 callback: function(response) {
                     if (response.message && response.message.purchase_order) {
-                        frappe.show_alert({
-                            message: `Stock added successfully for ${values.item_name}.`,
-                            indicator: 'green'
-                        });
-                        const itemcode = values.item_name.substring(0, 100);
+                        frappe.show_alert({ message: `Stock added for ${values.item_name}`, indicator: 'green' })
                         document.getElementById(`add-stock-${itemcode}`).style.display = "none";
-
                         const prsection = document.getElementById(`pr-section-${itemcode}`);
                         const workflowSelect = document.getElementById(`workflow-state-${itemcode}`);
                         if (prsection && workflowSelect) {
                             workflowSelect.innerHTML = `<option>${response.message.workflow_state || 'Pending'}</option>`;
                             prsection.style.display = "block";
                         }
-
                         window.itemtoPOmap[itemcode] = response.message.purchase_order;
                     } else {
                         frappe.msgprint('Failed to add stock.');
                     }
-                       d.hide();
+                    d.hide();
                 }
-                
             });
-            
         }
     });
     d.show();
@@ -137,7 +143,7 @@ function addStock(product) {
 function addPurchaseReceipt(item_code) {
     const poname = window.itemtoPOmap[item_code];
     if (!poname) {
-        frappe.msgprint("Purchase Order not found for this item.");
+        frappe.msgprint("Purchase Order not found.");
         return;
     }
 
@@ -148,22 +154,13 @@ function addPurchaseReceipt(item_code) {
             let msg = r.message;
             if (msg && msg.purchase_receipt) {
                 frappe.msgprint(
-                    (msg.status === "already_exists" ? "Purchase Receipt already exists: " : "Purchase Receipt created: ") + msg.purchase_receipt
+                    (msg.status === "already_exists" ? "Purchase Receipt exists: " : "Receipt created: ") + msg.purchase_receipt
                 );
-                let prsection = document.getElementById(`pr-section-${item_code}`);
-                if (prsection) prsection.style.display = "none";
-
-                let addstockbtn = document.getElementById(`add-stock-${item_code}`);
-                if (addstockbtn) addstockbtn.style.display = "inline-block";
-
-                let workflowstate = document.getElementById(`workflow-state-${item_code}`);
-                if (workflowstate) workflowstate.style.display = "none";
+                document.getElementById(`pr-section-${item_code}`).style.display = "none";
+                document.getElementById(`add-stock-${item_code}`).style.display = "inline-block";
             } else {
                 frappe.msgprint("Failed to create Purchase Receipt.");
             }
-        },
-        error: function(err) {
-            frappe.msgprint("Server error: " + (err.message || err.statusText || "Unknown error"));
         }
     });
 }
