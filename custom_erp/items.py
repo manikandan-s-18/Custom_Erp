@@ -1,7 +1,6 @@
 import frappe
 
 from frappe.model.mapper import get_mapped_doc
-
 @frappe.whitelist()
 def add_stock(item_code, title, price, image, quantity, required_date, target_warehouse):
     fso = frappe.new_doc('Fake Store Order')
@@ -17,7 +16,7 @@ def add_stock(item_code, title, price, image, quantity, required_date, target_wa
         item = frappe.get_doc({
             "doctype": "Item",
             "item_code": item_code,
-            "item_name": title,
+            "item_name": title[:100],
             "stock_uom": "Nos",
             "is_stock_item": 1,
             "item_group": "Products",
@@ -25,7 +24,7 @@ def add_stock(item_code, title, price, image, quantity, required_date, target_wa
         })
         item.insert()
 
-    
+
     po = frappe.new_doc('Purchase Order')
     po.supplier = fso.supplier or frappe.db.get_value("Supplier", {}, "name") or "Default Supplier"
     po.company = frappe.db.get_value("Company", {}, "name")
@@ -41,11 +40,11 @@ def add_stock(item_code, title, price, image, quantity, required_date, target_wa
     })
     po.insert()
     po.submit()
+
     return {
         "purchase_order": po.name,
         "workflow_state": fso.workflow_state
     }
-
 
 @frappe.whitelist()
 def get_workflow_state(fake_store_order):
@@ -57,9 +56,7 @@ def get_workflow_state(fake_store_order):
 
     po_name = frappe.db.get_value("Purchase Order Item", {"item_code": fso.item_code}, "parent")
     if po_name:
-
         pr_name = frappe.db.get_value("Purchase Receipt Item", {"purchase_order": po_name}, "parent")
-        
         if pr_name:
             pr_docstatus = frappe.db.get_value("Purchase Receipt", pr_name, "docstatus")
             if pr_docstatus == 1:
@@ -67,9 +64,7 @@ def get_workflow_state(fake_store_order):
         return {"status": "po_created", "purchase_order": po_name, "workflow_state": fso.workflow_state}
     return {"status": "no_po", "workflow_state": fso.workflow_state}
 
-
 @frappe.whitelist()
-
 def add_purchase_receipt(purchase_order):
     def update_item(source, target):
         target.purchase_order_item = source.name

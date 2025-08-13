@@ -23,14 +23,18 @@ frappe.pages['products'].on_page_load = function(wrapper) {
         });
 };
 
+
+function getItemCode(product) {
+    return `FS-${product.id}`;
+}
+
 function renderCards(products) {
     const container = document.getElementById("product-cards");
     container.innerHTML = "";
-
     products.forEach(product => {
         const safetitle = frappe.utils.escape_html(product.title || "");
         const safedesc = frappe.utils.escape_html(product.description || "");
-        const itemcode = `FS-${product.id}`;;
+        const itemcode = getItemCode(product);
 
         const card = document.createElement("div");
         card.className = "col-md-4";
@@ -53,17 +57,16 @@ function renderCards(products) {
         `;
         container.appendChild(card);
 
+
         frappe.call({
             method: "custom_erp.items.get_workflow_state",
-            args: { fake_store_order : itemcode},
+            args: { fake_store_order: itemcode },
             callback: function(r) {
                 if (r.message) {
                     if (r.message.status === "completed") {
-
                         document.getElementById(`add-stock-${itemcode}`).style.display = "inline-block";
                         document.getElementById(`pr-section-${itemcode}`).style.display = "none";
                     } else if (r.message.status === "po_created") {
-
                         document.getElementById(`add-stock-${itemcode}`).style.display = "none";
                         const prsection = document.getElementById(`pr-section-${itemcode}`);
                         const workflowSelect = document.getElementById(`workflow-state-${itemcode}`);
@@ -77,7 +80,7 @@ function renderCards(products) {
             }
         });
 
-    
+
         frappe.call({
             method: "custom_erp.items.get_stock_balance",
             args: { item_code: itemcode },
@@ -120,7 +123,7 @@ function addStock(product) {
                 },
                 callback: function(response) {
                     if (response.message && response.message.purchase_order) {
-                        frappe.show_alert({ message: `Stock added for ${values.item_name}`, indicator: 'green' })
+                        frappe.show_alert({ message: `Stock added for ${values.item_name}`, indicator: 'green' });
                         document.getElementById(`add-stock-${itemcode}`).style.display = "none";
                         const prsection = document.getElementById(`pr-section-${itemcode}`);
                         const workflowSelect = document.getElementById(`workflow-state-${itemcode}`);
