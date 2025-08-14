@@ -2,7 +2,7 @@ import frappe
 
 from frappe.model.mapper import get_mapped_doc
 @frappe.whitelist()
-def add_stock(item_code, title, price, image, quantity, required_date, target_warehouse):
+def add_stock(item_code, title,price, image, quantity, required_date, target_warehouse):
     fso = frappe.new_doc('Fake Store Order')
     fso.item_code = item_code
     fso.price = price
@@ -102,3 +102,9 @@ def get_stock_balance(item_code):
         SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = %s
     """, (item_code,))
     return result[0][0] if result and result[0][0] is not None else 0
+
+@frappe.whitelist()
+def check_item_exists(item_code):
+    exists = frappe.db.exists("Item", item_code)
+    return {"exists": bool(exists)}
+
