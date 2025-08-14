@@ -5,7 +5,7 @@
  "doctype": "Page",
  "icon": "Items",
  "idx": 0,
- "modified": "2025-08-01 06:17:44.152907",
+ "modified": "2025-08-13 16:16:59.250747",
  "modified_by": "Administrator",
  "module": "Custom Erp",
  "name": "products",
@@ -19,5 +19,6 @@
  "script": null,
  "standard": "Yes",
  "style": null,
- "system_page": 0
+ "system_page": 0,
+ "title": "Fake store Api's"
 }
