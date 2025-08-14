@@ -28,6 +28,19 @@ function getItemCode(product) {
     return `FS-${product.id}`;
 }
 
+function updatebalance(itemcode) {
+    frappe.call({
+        method: "custom_erp.items.get_stock_balance",
+        args: { item_code: itemcode },
+        callback: function(r) {
+            const stockbalance = document.getElementById(`stock-balance-${itemcode}`);
+            if (stockbalance) {
+                stockbalance.textContent = r.message || 0;
+            }
+        }
+    });
+}
+
 function renderCards(products) {
     const container = document.getElementById("product-cards");
     container.innerHTML = "";
@@ -136,6 +149,7 @@ function addStock(product) {
                         frappe.msgprint('Failed to add stock.');
                     }
                     d.hide();
+                    updatebalance(itemcode); 
                 }
             });
         }
@@ -161,6 +175,7 @@ function addPurchaseReceipt(item_code) {
                 );
                 document.getElementById(`pr-section-${item_code}`).style.display = "none";
                 document.getElementById(`add-stock-${item_code}`).style.display = "inline-block";
+                updatebalance(item_code); 
             } else {
                 frappe.msgprint("Failed to create Purchase Receipt.");
             }
