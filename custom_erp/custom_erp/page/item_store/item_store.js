@@ -33,47 +33,62 @@ frappe.pages['item-store'].on_page_load = function(wrapper) {
     loadProducts();
 
     function renderCart() {
-        let tbody = document.querySelector("#cart-table tbody");
-        tbody.innerHTML = "";
+    let tbody = document.querySelector("#cart-table tbody");
+    tbody.innerHTML = "";
 
-        if (window.cart.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3" class="text-muted text-center">No items added</td></tr>`;
-            return;
-        }
-
-        window.cart.forEach((item, idx) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td class="fw-bold">${item.item_name}</td>
-                    <td>
-                        <div class="d-flex align-items-center justify-content-center">
-                            <button class="btn btn-sm btn-outline-secondary cart-minus" data-idx="${idx}">−</button>
-                            <span class="mx-2 fw-semibold">${item.qty}</span>
-                            <button class="btn btn-sm btn-outline-secondary cart-plus" data-idx="${idx}">+</button>
-                        </div>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger cart-remove" data-idx="${idx}">✕</button>
-                    </td>
-                </tr>`;
-        });
-
-        $(".cart-minus").click(function() {
-            let idx = $(this).data("idx");
-            if (window.cart[idx].qty > 1) window.cart[idx].qty -= 1;
-            renderCart();
-        });
-        $(".cart-plus").click(function() {
-            let idx = $(this).data("idx");
-            window.cart[idx].qty += 1;
-            renderCart();
-        });
-        $(".cart-remove").click(function() {
-            let idx = $(this).data("idx");
-            window.cart.splice(idx, 1);
-            renderCart();
-        });
+    if (window.cart.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-muted text-center">No items added</td></tr>`;
+        return;
     }
+
+    let total = 0;
+
+    window.cart.forEach((item, idx) => {
+        let itemTotal = item.qty * item.rate;
+        total += itemTotal;
+        tbody.innerHTML += `
+            <tr>
+                <td class="fw-bold">${item.item_name}</td>
+                <td>₹${item.rate}</td>
+                <td>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <button class="btn btn-sm btn-outline-secondary cart-minus" data-idx="${idx}">−</button>
+                        <span class="mx-2 fw-semibold">${item.qty}</span>
+                        <button class="btn btn-sm btn-outline-secondary cart-plus" data-idx="${idx}">+</button>
+                    </div>
+                </td>
+                <td>₹${itemTotal}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger cart-remove" data-idx="${idx}">✕</button>
+                </td>
+            </tr>`;
+    });
+
+    tbody.innerHTML += `
+        <tr>
+            <td colspan="3" class="text-end fw-bold">Total</td>
+            <td class="fw-bold">₹${total}</td>
+            <td></td>
+        </tr>
+    `;
+
+    
+    $(".cart-minus").click(function() {
+        let idx = $(this).data("idx");
+        if (window.cart[idx].qty > 1) window.cart[idx].qty -= 1;
+        renderCart();
+    });
+    $(".cart-plus").click(function() {
+        let idx = $(this).data("idx");
+        window.cart[idx].qty += 1;
+        renderCart();
+    });
+    $(".cart-remove").click(function() {
+        let idx = $(this).data("idx");
+        window.cart.splice(idx, 1);
+        renderCart();
+    });
+}
 
     function loadProducts() {
         frappe.call({
