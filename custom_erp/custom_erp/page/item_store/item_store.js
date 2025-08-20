@@ -204,15 +204,23 @@ frappe.pages['item-store'].on_page_load = function(wrapper) {
                     });
 
                     $(".create-dn").click(function() {
-                        let so = $(this).data("id");
-                        frappe.call({
+                         let so = $(this).data("id");
+                          frappe.call({
                             method: "custom_erp.pos.create_delivery_note",
                             args: { sales_order: so },
                             callback: function(r) {
                                 if (r.message) {
                                     frappe.show_alert({ message: `Delivery Note ${r.message.name} created`, indicator: 'green' });
-                                    loadSalesOrders(); 
                                 }
+                                loadSalesOrders();
+                            },
+                            error: function(err) {
+                                frappe.msgprint({
+                                    title: __('Error'),
+                                    message: err.message,
+                                    indicator: 'red'
+                                });
+                                loadSalesOrders();
                             }
                         });
                     });

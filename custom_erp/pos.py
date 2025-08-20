@@ -21,25 +21,7 @@ def create_sales_order(cart_items):
     doc.delivery_date = frappe.utils.now_datetime()
     for c in cart_items:
         doc.append("items", {
-            "item_code": c["item_code"],
-            "qty": c.get("qty", 1),
-            "rate": c.get("rate", 0)
-        })
-    doc.insert()
-    doc.submit()
-    return {"name": doc.name}
-
-@frappe.whitelist()
-def create_sales_order(cart_items):
-    if isinstance(cart_items, str):
-        cart_items = json.loads(cart_items)
-    doc = frappe.new_doc("Sales Order")
-    doc.customer = "Guest"
-    doc.set_warehouse = "demo - MD"
-    doc.delivery_date = frappe.utils.now_datetime()
-    for c in cart_items:
-        doc.append("items", {
-            "item_code": c["item_code"],
+            "item_code": c["item_code"][:100],
             "qty": c.get("qty", 1),
             "rate": c.get("rate", 0)
         })
@@ -57,7 +39,7 @@ def create_sales_invoice(sales_order):
         return {"name": si.name}
     except Exception as e:
         frappe.log_error(e)
-
+        
 @frappe.whitelist()
 def create_delivery_note(sales_order):
     try:
@@ -67,5 +49,4 @@ def create_delivery_note(sales_order):
         dn.submit()
         return {"name": dn.name}
     except Exception as e:
-        frappe.log_error(e)
-    
+        frappe.throw(str(e)[:100])
