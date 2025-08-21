@@ -1,0 +1,24 @@
+{
+ "content": null,
+ "creation": "2025-08-18 11:44:39.849712",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "Items",
+ "idx": 0,
+ "modified": "2025-08-18 13:16:57.370581",
+ "modified_by": "Administrator",
+ "module": "Custom Erp",
+ "name": "item-store",
+ "owner": "Administrator",
+ "page_name": "item-store",
+ "roles": [
+  {
+   "role": "Administrator"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 1,
+ "title": "Items POS"
+}
