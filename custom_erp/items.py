@@ -1,6 +1,6 @@
 import frappe
-
 from frappe.model.mapper import get_mapped_doc
+
 @frappe.whitelist()
 def add_stock(item_code, title, price, image, quantity, required_date, target_warehouse):
     fso = frappe.new_doc('Fake Store Order')
@@ -9,7 +9,7 @@ def add_stock(item_code, title, price, image, quantity, required_date, target_wa
     fso.image = image
     fso.quantity = quantity
     fso.required_date = required_date
-    fso.target_warehouse = target_warehouse
+    fso.target_warehouse = target_warehouse 
     fso.insert()
 
     if not frappe.db.exists("Item", item_code):
@@ -20,11 +20,13 @@ def add_stock(item_code, title, price, image, quantity, required_date, target_wa
             "stock_uom": "Nos",
             "is_stock_item": 1,
             "item_group": "Products",
-            "description": title
+            "description": title,
+            "image":image,
+            "valuation_rate":price
         })
         item.insert()
 
-
+    # Create Purchase Order
     po = frappe.new_doc('Purchase Order')
     po.supplier = fso.supplier or frappe.db.get_value("Supplier", {}, "name") or "Default Supplier"
     po.company = frappe.db.get_value("Company", {}, "name")
@@ -93,12 +95,21 @@ def add_purchase_receipt(purchase_order):
         fso_doc = frappe.get_doc("Fake Store Order", fake_order_name)
         if fso_doc.docstatus == 0:
             fso_doc.submit()
+        fso_doc.workflow_state = "Receipt issued"
+        fso_doc.save()
 
-    return {"status": "success", "purchase_receipt": pr.name, "workflow_state": "Submitted"}
+    return {"status": "success", "purchase_receipt": pr.name, "workflow_state": "Receipt issued"}
 
 @frappe.whitelist()
 def get_stock_balance(item_code):
     result = frappe.db.sql("""
         SELECT SUM(actual_qty) FROM `tabBin` WHERE item_code = %s
     """, (item_code,))
-    return result[0][0] if result and result[0][0] is not None else 0
+
+    stock_qty = result if result and result is not None else 0
+    return stock_qty
+
+@frappe.whitelist()
+def check_item_exists(item_code):
+    exists = frappe.db.exists("Item", item_code)
+    return {"exists": bool(exists)}
