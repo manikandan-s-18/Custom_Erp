@@ -2,7 +2,33 @@ import frappe
 
 from frappe.model.mapper import get_mapped_doc
 @frappe.whitelist()
-def add_stock(item_code, title,price, image, quantity, required_date, target_warehouse):
+def add_stock(item_code, title, price, image, quantity, required_date, target_warehouse):
+    image_url=None
+    file_doc = frappe.get_doc({
+        "doctype": "File",
+        "file_url": image,      
+        "file_name": f"{item_code}.jpg",
+        "attached_to_doctype": "Item",
+        "attached_to_name": item_code,
+        "is_private": 0
+    })
+    image_url = file_doc.file_url
+    file_doc.insert()
+
+    if not frappe.db.exists("Item", item_code):
+        frappe.get_doc({
+            "doctype": "Item",
+            "item_code": item_code,
+            "item_name": title[:100],
+            "stock_uom": "Nos",
+            "is_stock_item": 1,
+            "item_group": "Products",
+            "description": title,
+            "image": image_url,   
+            "valuation_rate": price
+        }).insert()
+
+
     fso = frappe.new_doc('Fake Store Order')
     fso.item_code = item_code
     fso.price = price
@@ -11,19 +37,6 @@ def add_stock(item_code, title,price, image, quantity, required_date, target_war
     fso.required_date = required_date
     fso.target_warehouse = target_warehouse
     fso.insert()
-
-    if not frappe.db.exists("Item", item_code):
-        item = frappe.get_doc({
-            "doctype": "Item",
-            "item_code": item_code,
-            "item_name": title[:100],
-            "stock_uom": "Nos",
-            "is_stock_item": 1,
-            "item_group": "Products",
-            "description": title
-        })
-        item.insert()
-
 
     po = frappe.new_doc('Purchase Order')
     po.supplier = fso.supplier or frappe.db.get_value("Supplier", {}, "name") or "Default Supplier"
