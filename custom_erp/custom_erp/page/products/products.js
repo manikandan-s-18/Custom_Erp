@@ -119,13 +119,11 @@ function renderCards(products) {
                         let btnSection = document.getElementById(`btn-section-${itemcode}`);
                         let hasItem = checkRes.message && checkRes.message.exists;
 
-
                         frappe.call({
                             method: "custom_erp.items.get_workflow_state",
                             args: { fake_store_order: itemcode },
                             callback: function(wfRes) {
                                 const wfMsg = wfRes.message || {};
-
 
                                 if (wfMsg.status === "po_created") {
                                     btnSection.innerHTML = `
