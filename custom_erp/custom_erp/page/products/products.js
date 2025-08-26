@@ -15,12 +15,15 @@ frappe.pages['products'].on_page_load = function(wrapper) {
         </div>
     `);
 
+
     window.itemtoPOmap = {};
     window.pagesize = 9;
     window.totalproducts = 0;
     window.currentpage = 1;
 
+
     loadProducts(window.currentpage);
+
 
     document.getElementById("prev-page").addEventListener("click", function() {
         if (window.currentpage > 1) {
@@ -28,6 +31,7 @@ frappe.pages['products'].on_page_load = function(wrapper) {
             loadProducts(window.currentpage);
         }
     });
+
 
     document.getElementById("next-page").addEventListener("click", function() {
         let maxPage = Math.ceil(window.totalproducts / window.pagesize);
@@ -37,6 +41,7 @@ frappe.pages['products'].on_page_load = function(wrapper) {
         }
     });
 };
+
 
 function loadProducts(page) {
         fetch(`https://fakestoreapi.in/api/products`)
@@ -54,9 +59,11 @@ function loadProducts(page) {
         });
 }
 
+
 function getItemCode(product) {
     return `FS-${product.id}`;
 }
+
 
 function updatebalance(itemcode) {
     frappe.call({
@@ -77,6 +84,7 @@ function renderCards(products) {
         const safetitle = frappe.utils.escape_html(product.title || "");
         const safedesc = frappe.utils.escape_html(product.description || "");
         const itemcode = getItemCode(product);
+
 
         frappe.call({
             method: "custom_erp.items.get_stock_balance",
@@ -102,6 +110,7 @@ function renderCards(products) {
                 card.className = "col-md-4";
                 card.innerHTML = cardHTML;
                 container.appendChild(card);
+
 
                 frappe.call({
                     method: "custom_erp.items.check_item_exists",
