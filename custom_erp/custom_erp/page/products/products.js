@@ -67,7 +67,7 @@ function getItemCode(product) {
 
 function updatebalance(itemcode) {
     frappe.call({
-        method: "custom_erp.items.get_stock_balance",
+        method: "custom_erp.custom_erp.page.products.items.get_stock_balance",
         args: { item_code: itemcode },
         callback: function(r) {
             const stockbalance = document.getElementById(`stock-balance-${itemcode}`);
@@ -87,7 +87,7 @@ function renderCards(products) {
 
 
         frappe.call({
-            method: "custom_erp.items.get_stock_balance",
+            method: "custom_erp.custom_erp.page.products.items.get_stock_balance",
             args: { item_code: itemcode },
             callback: function(r) {
                 let stockBal = r.message;
@@ -113,7 +113,7 @@ function renderCards(products) {
 
 
                 frappe.call({
-                    method: "custom_erp.items.check_item_exists",
+                    method: "custom_erp.custom_erp.page.products.items.check_item_exists",
                     args: { item_code: itemcode },
                     callback: function(checkRes) {
                         let btnSection = document.getElementById(`btn-section-${itemcode}`);
@@ -121,7 +121,7 @@ function renderCards(products) {
 
 
                         frappe.call({
-                            method: "custom_erp.items.get_workflow_state",
+                            method: "custom_erp.custom_erp.page.products.items.get_workflow_state",
                             args: { fake_store_order: itemcode },
                             callback: function(wfRes) {
                                 const wfMsg = wfRes.message || {};
@@ -190,7 +190,7 @@ function createPurchaseOrder(product, itemcode, btnSection) {
         primary_action_label: 'Submit',
         primary_action(values) {
             frappe.call({
-                method: 'custom_erp.items.add_stock',
+                method: 'custom_erp.custom_erp.page.products.items.add_stock',
                 args: {
                     item_code: values.item_code,
                     title: values.item_name,
@@ -239,7 +239,7 @@ function addStock(product, itemcode, btnSection) {
         primary_action_label: 'Submit',
         primary_action(values) {
             frappe.call({
-                method: 'custom_erp.items.add_stock',
+                method: 'custom_erp.custom_erp.page.products.items.add_stock',
                 args: {
                     item_code: values.item_code,
                     title: values.item_name,
@@ -281,7 +281,7 @@ function addPurchaseReceipt(itemcode, btnSection) {
         return;
     }
     frappe.call({
-        method: 'custom_erp.items.add_purchase_receipt',
+        method: 'custom_erp.custom_erp.page.products.items.add_purchase_receipt',
         args: { purchase_order: poname },
         callback: function(r) {
             let msg = r.message;
