@@ -12,7 +12,20 @@ doctype_js = {
     ]
 }
 
+doc_events = {
+    "Sales Order": {
+        "on_submit": "custom_erp.telegram.notify_customer_order_placed"
+    },
+    "Sales Invoice": {
+        "on_submit": "custom_erp.telegram.notify_customer_invoice_created"
+    }
+}
 
+scheduler_events = {
+    "daily": [
+        "custom_erp.telegram.check_and_send_payment_reminders"
+    ]
+}
 
 # Apps
 # ------------------

@@ -137,7 +137,7 @@ frappe.pages['item-store'].on_page_load = function(wrapper) {
             return;
         }
         frappe.call({
-            method: "custom_erp.pos.create_sales_order",
+            method: "custom_erp.custom_erp.page.item_store.pos.create_sales_order",
             args: { cart_items: window.cart },
             callback: function(r) {
                 if (r.message && r.message.success) {
@@ -156,7 +156,7 @@ frappe.pages['item-store'].on_page_load = function(wrapper) {
 
     function loadSalesOrders() {
         frappe.call({
-            method: "custom_erp.pos.get_sales_orders",
+            method: "custom_erp.custom_erp.page.item_store.pos.get_sales_orders",
             callback: function(r) {
                 if (r.message) {
                     let html = `
@@ -234,7 +234,7 @@ frappe.pages['item-store'].on_page_load = function(wrapper) {
 
     function makePayment(salesOrderId, invoiceId = null) {
         frappe.call({
-            method: "custom_erp.pos.get_payment_info",
+            method: "custom_erp.custom_erp.page.item_store.pos.get_payment_info",
             args: { sales_order_id: salesOrderId, invoice_id: invoiceId },
             callback: function(r) {
                 if (r.message && r.message.success) {
@@ -278,7 +278,7 @@ frappe.pages['item-store'].on_page_load = function(wrapper) {
                 }
 
                 frappe.call({
-                    method: "custom_erp.pos.create_payment",
+                    method: "custom_erp.custom_erp.page.item_store.pos.create_payment",
                     args: {
                         sales_order_id: salesOrderId,
                         invoice_id: invoiceId,
