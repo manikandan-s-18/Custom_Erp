@@ -10,12 +10,13 @@ def send_telegram_message(chat_id, message, bot_token, parse_mode="HTML"):
         "text": message,
         "parse_mode": parse_mode
     }
+    
     try:
         response = requests.post(url, data=payload, timeout=30)
         response.raise_for_status()
         return {"success": True, "response": response.json()}
     except Exception as e:
-        frappe.logger().error(f"Telegram send failed: {str(e)}")
+        frappe.log_error(f"Telegram send failed: {str(e)}")
         frappe.msgprint(f"Error: {str(e)}")
         return {"success": False, "error": str(e)}
 
@@ -23,14 +24,14 @@ def notify_customer_invoice_created(doc, method=None):
     try:
         bot_token = frappe.conf.get('telegram_bot_token')
         if not bot_token:
-            frappe.logger().warning("Telegram bot token not found in site_config.json")
+            frappe.log_error("Telegram bot token not found in site_config.json")
             return
             
         customer = frappe.get_doc("Customer", doc.customer)
         telegram_id = customer.get("custom_telegram_id")
         
         if not telegram_id:
-            frappe.logger().info(f"No telegram_id found for Customer {doc.customer}")
+            frappe.log_error(f"No telegram_id found for Customer {doc.customer}")
             return
         
         message = (
@@ -51,7 +52,7 @@ def notify_customer_invoice_created(doc, method=None):
         )
         
         if result["success"]:
-            frappe.logger().info(f"Telegram notification sent for invoice {doc.name}")
+            frappe.log_error(f"Telegram notification sent for invoice {doc.name}")
         else:
             frappe.log_error(
                 message=result.get("error"),
@@ -66,14 +67,14 @@ def notify_customer_order_placed(doc, method=None):
     try:
         bot_token = frappe.conf.get('telegram_bot_token')
         if not bot_token:
-            frappe.logger().warning("Telegram bot token not found in site_config.json")
+            frappe.log_error("Telegram bot token not found in site_config.json")
             return
             
         customer = frappe.get_doc("Customer", doc.customer)
         telegram_id = customer.get("custom_telegram_id")
         
         if not telegram_id:
-            frappe.logger().info(f"No telegram_id found for Customer {doc.customer}")
+            frappe.log_error(f"No telegram_id found for Customer {doc.customer}")
             return
         
         
@@ -105,7 +106,7 @@ def notify_customer_order_placed(doc, method=None):
         )
         
         if result["success"]:
-            frappe.logger().info(f"Order notification sent for {doc.name}")
+            frappe.log_error(f"Order notification sent for {doc.name}")
         else:
             frappe.log_error(
                 message=result.get("error"),
@@ -119,7 +120,7 @@ def check_and_send_payment_reminders():
     try:
         bot_token = frappe.conf.get('telegram_bot_token')
         if not bot_token:
-            frappe.logger().warning("Telegram bot token not found in site_config.json")
+            frappe.log_error("Telegram bot token not found in site_config.json")
             return
 
         today = nowdate()
@@ -137,7 +138,7 @@ def check_and_send_payment_reminders():
         for invoice in overdue_invoices:
             send_overdue_reminder(invoice, bot_token)
 
-        frappe.logger().info(f"Overdue reminders sent for {len(overdue_invoices)} invoices")
+        frappe.log_error(f"Overdue reminders sent for {len(overdue_invoices)} invoices")
 
     except Exception as e:
         frappe.log_error(message=str(e), title="Payment Reminder Check Error")
@@ -149,7 +150,7 @@ def send_overdue_reminder(invoice, bot_token):
         telegram_id = customer.get("custom_telegram_id")
 
         if not telegram_id:
-            frappe.logger().info(f"No telegram_id found for Customer {invoice.customer}")
+            frappe.log_error(f"No telegram_id found for Customer {invoice.customer}")
             return
 
         days_overdue = (getdate(nowdate()) - getdate(invoice.due_date)).days
@@ -174,7 +175,7 @@ def send_overdue_reminder(invoice, bot_token):
         )
 
         if result["success"]:
-            frappe.logger().info(f"Overdue reminder sent for invoice {invoice.name}")
+            frappe.log_error(f"Overdue reminder sent for invoice {invoice.name}")
         else:
             frappe.log_error(
                 message=result.get("error"),
