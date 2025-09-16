@@ -4,7 +4,8 @@ def after_install():
     bot_user_creation()
 
 def bot_user_creation():
-    if not frappe.db.exists("user","bot@gmail.com"):
+    email ="bot@gmail.com"
+    if not frappe.db.exists("User",email):
         user_doc = frappe.get_doc({
         "doctype": "User",
         "email":"bot@gmail.com",
@@ -12,10 +13,10 @@ def bot_user_creation():
         "enabled" :1,
         "send_welcome_email": 0, 
         "roles": [{"role": "System Manager"},{"role": "Sales Manager"}]
-
+          
     })
         user_doc.insert(ignore_permissions=True)
         frappe.db.commit()
-        frappe.msgprint("User"+user_doc.email+" created Successfully")
+        frappe.msgprint(f"User{email}created Successfully")
     else:
-        frappe.msgprint("User"+user_doc.email+" already exists.")
+        frappe.msgprint(f"User{email} already exists.")
