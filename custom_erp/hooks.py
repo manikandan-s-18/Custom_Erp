@@ -14,18 +14,27 @@ doctype_js = {
 
 doc_events = {
     "Sales Order": {
-        "on_submit": "custom_erp.telegram.notify_customer_order_placed"
+        "on_submit": "custom_erp.chatbot.telegram.notify_customer_order_placed"
     },
     "Sales Invoice": {
-        "on_submit": "custom_erp.telegram.notify_customer_invoice_created"
+        "on_submit": "custom_erp.chatbot.telegram.notify_customer_invoice_created"
     }
 }
 
 scheduler_events = {
     "daily": [
-        "custom_erp.telegram.check_and_send_payment_reminders"
+        "custom_erp.chatbot.telegram.check_and_send_payment_reminders"
     ]
 }
+
+
+website_route_rules = [
+    {
+        "from_route": "/webhook/telegram", 
+        "to_route": "custom_erp.chatbot.telegram_webhook.telegram_webhook"
+    },
+]
+
 
 # Apps
 # ------------------
@@ -104,7 +113,8 @@ scheduler_events = {
 # ------------
 
 # before_install = "custom_erp.install.before_install"
-# after_install = "custom_erp.install.after_install"
+
+after_install = "custom_erp.install.after_install"
 
 # Uninstallation
 # ------------

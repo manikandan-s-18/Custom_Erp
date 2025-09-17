@@ -1,0 +1,48 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-09-15 18:23:02.716845",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "telegram_token",
+  "webhook_url"
+ ],
+ "fields": [
+  {
+   "fieldname": "telegram_token",
+   "fieldtype": "Data",
+   "label": "Telegram Token"
+  },
+  {
+   "fieldname": "webhook_url",
+   "fieldtype": "Data",
+   "label": "Webhook Url"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-09-15 18:24:39.942791",
+ "modified_by": "Administrator",
+ "module": "Custom Erp",
+ "name": "Telegram Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
